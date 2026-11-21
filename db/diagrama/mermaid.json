@@ -1,0 +1,13 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "DejaVu Sans, Liberation Sans, sans-serif",
+    "fontSize": "15px",
+    "primaryColor": "#FFFFFF",
+    "primaryTextColor": "#15201F",
+    "primaryBorderColor": "#0E5C56",
+    "lineColor": "#0E5C56",
+    "tertiaryColor": "#DFECE9"
+  },
+  "er": { "entityPadding": 10, "minEntityWidth": 140 }
+}

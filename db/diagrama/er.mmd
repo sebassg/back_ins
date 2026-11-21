@@ -1,0 +1,88 @@
+erDiagram
+    usuario ||--|| credencial : "entra con"
+    usuario ||--o{ sesion : "abre"
+    sesion  ||--o{ refresh_token : "rota"
+    usuario ||--o{ token_correo : "recibe"
+    usuario ||--o{ intento_login : "origina"
+    usuario ||--o{ auditoria : "ejecuta"
+    usuario ||--o{ usuario : "provisiona"
+
+    usuario {
+        bigint id PK
+        char uuid UK "identificador publico, claim sub del JWT"
+        enum tipo_documento "CC, TI, RC, CE, PA, PEP"
+        varchar numero_documento UK "usuario de inicio de sesion (HU07-E1)"
+        varchar nombres
+        varchar apellidos
+        varchar correo UK "destino del enlace de activacion y recuperacion"
+        varchar telefono "reservado para SMS"
+        enum rol "ACUDIENTE, DOCENTE, ADMINISTRATIVO"
+        enum estado "PENDIENTE_ACTIVACION, ACTIVO, INACTIVO"
+        bigint creado_por FK "quien provisiono la cuenta"
+        datetime creado_en
+        datetime actualizado_en
+    }
+
+    credencial {
+        bigint usuario_id PK, FK
+        varchar hash_contrasena "scrypt; NULL hasta activar la cuenta"
+        tinyint intentos_fallidos "HU07-E2: se bloquea al quinto"
+        datetime bloqueado_hasta "HU07-E2: 15 minutos"
+        datetime ultimo_ingreso_en
+        datetime actualizado_en
+    }
+
+    sesion {
+        char id PK "familia de refresh tokens"
+        bigint usuario_id FK
+        datetime creado_en
+        datetime expira_en "techo absoluto: 90 dias"
+        datetime ultimo_uso_en
+        datetime revocada_en "HU12-E3"
+        enum motivo_revocacion "CIERRE_SESION, USUARIO_DESACTIVADO, CAMBIO_CONTRASENA, REUSO_DETECTADO, ADMINISTRATIVA"
+        json claims "fijados al iniciar sesion"
+        varbinary ip
+        varchar user_agent
+        varchar dispositivo
+    }
+
+    refresh_token {
+        char id PK "SHA-256 del token"
+        char sesion_id FK
+        datetime creado_en
+        datetime expira_en "30 dias"
+        datetime usado_en "un solo uso"
+    }
+
+    token_correo {
+        char id PK "SHA-256 del token"
+        enum proposito "password-reset, email-verification"
+        bigint usuario_id FK
+        varchar correo "unica direccion para la que sirve"
+        char huella "invalida el enlace si cambia la contrasena"
+        datetime creado_en
+        datetime expira_en "HU07-E3: 30 minutos"
+    }
+
+    intento_login {
+        bigint id PK
+        bigint usuario_id FK "NULL si el documento no existe"
+        varchar documento_ingresado
+        boolean exitoso
+        enum motivo_fallo
+        varbinary ip
+        varchar user_agent
+        datetime creado_en
+    }
+
+    auditoria {
+        bigint id PK
+        bigint usuario_id FK
+        varchar rol "congelado al momento del hecho"
+        varchar accion
+        varchar entidad
+        varchar entidad_id
+        json detalle
+        varbinary ip
+        datetime creado_en
+    }

@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------------
+# Dependencias y compilado
+# ---------------------------------------------------------------------------
+/node_modules
+/dist
+*.tsbuildinfo
+
+# ---------------------------------------------------------------------------
+# INFORMACIÓN SENSIBLE — nunca se versiona
+# Estos archivos llevan claves de firma de tokens, contraseñas de la base de
+# datos y credenciales de correo. La plantilla sin secretos es .env.example.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# Llaves y certificados
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+secrets/
+*.secret
+
+# Respaldos y volcados de la base de datos (contienen datos de menores:
+# Ley 1581 de 2012)
+*.sql.gz
+*.dump
+/db/backups/
+
+# ---------------------------------------------------------------------------
+# Archivos de herramientas de IA (personales, no del proyecto)
+# ---------------------------------------------------------------------------
+CLAUDE.md
+.claude/
+
+# ---------------------------------------------------------------------------
+# Pruebas y registros
+# ---------------------------------------------------------------------------
+/coverage
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# ---------------------------------------------------------------------------
+# Editores y sistema operativo
+# ---------------------------------------------------------------------------
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
