@@ -20,5 +20,15 @@ services:
       timeout: 5s
       retries: 20
 
+  # Correo de desarrollo: recibe los enlaces de activación y recuperación.
+  # Bandeja en http://localhost:8025 (SMTP en el 1025, el de MAIL_PORT).
+  mailpit:
+    image: axllent/mailpit
+    container_name: retiro_seguro_correo
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   db_data:
