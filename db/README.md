@@ -118,7 +118,7 @@ funcionario:
    → usuario.estado = 'PENDIENTE_ACTIVACION'
    → credencial.hash_contrasena = NULL
 2. El sistema envía un enlace de activación al correo registrado (72 h).
-   → token_correo (proposito = 'password-reset')
+   → token_correo (proposito = 'email-verification')
 3. El usuario abre el enlace y define SU propia contraseña.
    → credencial.hash_contrasena = scrypt(...), usuario.estado = 'ACTIVO'
 4. Ya puede iniciar sesión con su número de documento (HU07-E1).
@@ -132,10 +132,12 @@ falta cuando alguien entrega una contraseña temporal, y aquí eso no ocurre nun
 una cuenta sin activar se reconoce por su estado, y al activarse la contraseña ya
 es la que eligió su dueño.
 
-La activación y la recuperación usan el mismo mecanismo porque son el mismo
-problema: probar que alguien controla el correo registrado y dejarlo fijar una
+La activación y la recuperación usan la misma tabla y el mismo contrato
+(`EmailTokenStore`) porque son el mismo problema: probar que alguien controla el correo registrado y dejarlo fijar una
 contraseña. La diferencia es la vigencia (72 horas contra 30 minutos) y que al
-activar no había contraseña previa.
+activar no había contraseña previa. Por esa diferencia de vigencia, la
+activación usa el flujo `email-verification` de `@nestjs/authentication` y la
+recuperación el de `password-reset`: cada uno tiene su propio TTL.
 
 ## 4. Recuperación de contraseña (HU07-E3)
 
