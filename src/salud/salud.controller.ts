@@ -1,8 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
+import { Public } from '@nestjs/authentication';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 /** Comprobación de estado: confirma que la API responde y que la BD contesta. */
+@Public()
 @Controller('salud')
 export class SaludController {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
