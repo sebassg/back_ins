@@ -31,13 +31,15 @@ describe('validarEnv', () => {
   });
 
   it('rechaza un JWT_SECRET demasiado corto', () => {
-    expect(() => validarEnv({ ...entornoBase, JWT_SECRET: 'corto' })).toThrow(/JWT_SECRET/);
+    expect(() => validarEnv({ ...entornoBase, JWT_SECRET: 'corto' })).toThrow(
+      /JWT_SECRET/,
+    );
   });
 
   it('rechaza una duración mal escrita', () => {
-    expect(() => validarEnv({ ...entornoBase, TOKEN_RECUPERACION_TTL: 'media hora' })).toThrow(
-      /TOKEN_RECUPERACION_TTL/,
-    );
+    expect(() =>
+      validarEnv({ ...entornoBase, TOKEN_RECUPERACION_TTL: 'media hora' }),
+    ).toThrow(/TOKEN_RECUPERACION_TTL/);
   });
 
   it('exige las variables sin las que la aplicación no puede arrancar', () => {
