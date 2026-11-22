@@ -1,0 +1,30 @@
+meta {
+  name: Cerrar sesión
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/cerrar-sesion
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 204) {
+    bru.setVar("accessToken", "");
+    bru.setVar("refreshToken", "");
+  }
+}
+
+tests {
+  test("responde 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}

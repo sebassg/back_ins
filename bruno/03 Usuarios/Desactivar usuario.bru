@@ -1,0 +1,30 @@
+meta {
+  name: Desactivar usuario
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/usuarios/{{uuidUsuarioObjetivo}}/desactivar
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  // Defina uuidUsuarioObjetivo en el entorno para ejecutarla.
+  if (!bru.getEnvVar("uuidUsuarioObjetivo")) {
+    bru.runner.skipRequest();
+  }
+}
+
+tests {
+  test("responde 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  HU12-E2 / HU12-E3. Solo ADMINISTRATIVO (otro rol: 403). Defina
+  `uuidUsuarioObjetivo` en el entorno. Cierra todas las sesiones del
+  usuario; no se puede desactivar la propia cuenta.
+}

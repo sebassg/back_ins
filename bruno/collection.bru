@@ -1,0 +1,23 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  # Retiro Seguro API — v1 (HU07 + HU12)
+
+  1. Elija el entorno **local** (arriba a la derecha) y defina en él la
+     variable secreta `contrasena`.
+  2. Ejecute **02 Sesión › Iniciar sesión**: guarda `accessToken` y
+     `refreshToken`, y el resto de peticiones los usan solos.
+  3. Si la cuenta aún no tiene contraseña, use primero la carpeta
+     **03 Activación y recuperación** (los correos llegan a Mailpit,
+     http://localhost:8025).
+
+  Las peticiones protegidas heredan `Authorization: Bearer {{accessToken}}`
+  de la colección. El access token dura 15 minutos: use **Renovar** cuando
+  responda 401.
+}

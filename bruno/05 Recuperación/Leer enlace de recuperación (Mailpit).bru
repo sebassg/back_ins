@@ -1,0 +1,37 @@
+meta {
+  name: Leer enlace de recuperación (Mailpit)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{mailpitUrl}}/api/v1/message/latest
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // El correo se envía después de responder: se le da un momento.
+  await new Promise((listo) => setTimeout(listo, 1500));
+}
+
+script:post-response {
+  const solicitado = Number(bru.getVar("enlaceSolicitadoEn") || 0);
+  const enviado = new Date(res.body.Date).getTime();
+  const esNuevo = enviado >= solicitado - 2000 && res.body.Subject === "Restablezca su contraseña de Retiro Seguro";
+  const token = esNuevo ? /token=([\w-]+)/.exec(res.body.HTML || "") : null;
+  bru.setVar("tokenEnlace", token ? token[1] : "");
+}
+
+tests {
+  test("Mailpit responde", function () {
+    expect(res.status).to.equal(200);
+  });
+}
+
+docs {
+  Solo en desarrollo. Guarda en `tokenEnlace` el token del correo
+  "Restablezca su contraseña de Retiro Seguro", si llegó después de pedir el enlace. Si no
+  llegó (la cuenta no está en el estado que el flujo exige), queda vacío y la
+  petición siguiente se omite.
+}

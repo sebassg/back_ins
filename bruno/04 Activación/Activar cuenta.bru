@@ -1,0 +1,36 @@
+meta {
+  name: Activar cuenta
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/activar
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "{{tokenEnlace}}",
+    "contrasena": "{{contrasena}}"
+  }
+}
+
+script:pre-request {
+  // Sin enlace nuevo (la cuenta ya estaba activa) no hay nada que activar.
+  if (!bru.getVar("tokenEnlace")) {
+    bru.runner.skipRequest();
+  }
+}
+
+tests {
+  test("responde 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Define la primera contraseña (mínimo 8 caracteres) y pasa la cuenta a
+  ACTIVO. El enlace sirve una sola vez: un segundo intento responde 400.
+}

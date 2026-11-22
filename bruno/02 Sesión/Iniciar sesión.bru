@@ -1,0 +1,46 @@
+meta {
+  name: Iniciar sesión
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/iniciar-sesion
+  body: json
+  auth: none
+}
+
+headers {
+  x-dispositivo: Bruno
+}
+
+body:json {
+  {
+    "numeroDocumento": "{{numeroDocumento}}",
+    "contrasena": "{{contrasena}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("accessToken", res.body.accessToken);
+    bru.setVar("refreshToken", res.body.refreshToken);
+    bru.setVar("uuidUsuario", res.body.usuario.uuid);
+  }
+}
+
+tests {
+  test("devuelve tokens y el rol", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.accessToken).to.be.a("string");
+    expect(res.body.usuario.rol).to.be.oneOf(["ACUDIENTE", "DOCENTE", "ADMINISTRATIVO"]);
+  });
+}
+
+docs {
+  HU07-E1 / HU12-E1. Guarda `accessToken` y `refreshToken` para el resto de
+  la colección.
+
+  Cualquier fallo responde 401 "Usuario o contraseña incorrectos". Al quinto
+  fallo la cuenta se bloquea 15 minutos (HU07-E2). Límite: 10 por minuto.
+}

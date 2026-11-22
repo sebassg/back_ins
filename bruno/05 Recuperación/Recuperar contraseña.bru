@@ -1,0 +1,34 @@
+meta {
+  name: Recuperar contraseña
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/recuperar-contrasena
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "numeroDocumento": "{{numeroDocumento}}"
+  }
+}
+
+script:post-response {
+  // Solo los correos enviados desde ahora cuentan para leer el enlace.
+  bru.setVar("enlaceSolicitadoEn", Date.now());
+  bru.setVar("tokenEnlace", "");
+}
+
+tests {
+  test("responde 202", function () {
+    expect(res.status).to.equal(202);
+  });
+}
+
+docs {
+  HU07-E3. Envía el enlace (30 min, un solo uso) al correo registrado de una
+  cuenta ACTIVA. La respuesta es la misma exista o no el documento.
+}

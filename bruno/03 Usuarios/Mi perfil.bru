@@ -1,0 +1,22 @@
+meta {
+  name: Mi perfil
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/usuarios/yo
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("devuelve el perfil y el rol", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.rol).to.be.a("string");
+  });
+}
+
+docs {
+  HU12-E1: el rol con el que la app arma el menú.
+}

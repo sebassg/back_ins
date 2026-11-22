@@ -1,0 +1,36 @@
+meta {
+  name: Renovar
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/renovar
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("accessToken", res.body.accessToken);
+    bru.setVar("refreshToken", res.body.refreshToken);
+  }
+}
+
+tests {
+  test("rota el refresh token", function () {
+    expect(res.status).to.equal(200);
+  });
+}
+
+docs {
+  Cambia el refresh token por uno nuevo (un solo uso). Si se envía uno ya
+  usado, se revoca la sesión completa (REUSO_DETECTADO) y hay que volver a
+  iniciar sesión.
+}

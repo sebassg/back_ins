@@ -1,0 +1,36 @@
+meta {
+  name: Restablecer contraseña
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/restablecer-contrasena
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "{{tokenEnlace}}",
+    "contrasena": "{{contrasenaNueva}}"
+  }
+}
+
+script:pre-request {
+  // Cambia la contraseña de verdad: solo con enlace nuevo y contrasenaNueva definida.
+  if (!bru.getVar("tokenEnlace") || !bru.getEnvVar("contrasenaNueva")) {
+    bru.runner.skipRequest();
+  }
+}
+
+tests {
+  test("responde 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Fija `contrasenaNueva` y cierra TODAS las sesiones del usuario. Después,
+  actualice `contrasena` en el entorno para volver a iniciar sesión.
+}
