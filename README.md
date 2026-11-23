@@ -12,6 +12,7 @@ autorizaciones a terceros, restricciones de custodia y bitácora.
 | Entrega | Historias | Estado |
 |---|---|---|
 | v1 | HU07 (inicio de sesión del acudiente) · HU12 (inicio de sesión del personal por rol) | Endpoints implementados, con pruebas unitarias y e2e |
+| v2 | HU01 (registro de estudiantes y provisión de la cuenta del acudiente titular) | Endpoints implementados, con pruebas unitarias y e2e |
 
 El diseño de la base de datos, el modelo de sesión y el de roles están en
 **[`db/README.md`](db/README.md)**; el diagrama ER, en
@@ -61,10 +62,26 @@ exige `Authorization: Bearer <accessToken>`.
 | `POST auth/activar` | HU07-E1 | Token del enlace + la contraseña que la persona elige |
 | `GET usuarios/yo` | HU12-E1 | Perfil y rol, para armar el menú |
 | `PATCH usuarios/:uuid/desactivar` | HU12-E2, HU12-E3 | Solo `ADMINISTRATIVO`; cierra todas las sesiones del usuario |
+| `POST estudiantes` | HU01-E1, HU01-E2 | Registra al menor, lo vincula con su acudiente titular, abre la cuenta de ese acudiente y le envía el enlace de activación |
+| `GET estudiantes?buscar=` | HU01-E3 | Busca por nombre o documento, paginado |
+| `GET estudiantes/:uuid` | HU01-E3 | Ficha con grupo, acudientes, autorización de datos y quién hizo el último cambio |
+| `PATCH estudiantes/:uuid` | HU01-E3 | Cambia la ficha del estudiante |
+| `PATCH estudiantes/:uuid/acudientes/:uuid` | HU01-E3 | Datos de contacto del acudiente y estado de su vínculo |
+| `GET grupos` | HU01-E1 | Los grupos de preescolar, para elegir el del estudiante |
 
 Un fallo de inicio de sesión responde siempre 401 `Usuario o contraseña
 incorrectos`; al quinto fallo la cuenta se bloquea 15 minutos (HU07-E2). Las
 rutas de `auth/` tienen un límite de 10 peticiones por minuto.
+
+Las rutas de `estudiantes/` son solo para `ADMINISTRATIVO`. HU01-E2 pide
+«resaltar los campos en conflicto», así que un duplicado responde 409 con el
+campo señalado —`{ "message": "...", "campo": "acudiente.correo" }`— y los
+campos faltantes, 400 con el detalle por campo.
+
+El acudiente que se registra con un estudiante **no recibe contraseña**: le llega
+un enlace de activación (72 h) y él define la suya, igual que la cuenta de la
+semilla. Si ese acudiente ya tenía cuenta porque otro hijo estaba registrado, se
+reutiliza y no se le envía nada.
 
 `npm run test:e2e` necesita la base de datos arriba (`npm run db:up && npm run db:install`).
 

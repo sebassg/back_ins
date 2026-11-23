@@ -49,6 +49,11 @@ export const esquemaEnv = z.object({
   URL_APP: z.url(),
   URL_RESTABLECER_CONTRASENA: z.url(),
 
+  // Reglas de negocio de HU01. La versión del aviso de privacidad la estampa
+  // el servidor en cada autorización de tratamiento de datos: una constancia
+  // legal no puede depender de lo que envíe el formulario (Ley 1581 de 2012).
+  VERSION_AVISO_PRIVACIDAD: z.string().min(1).max(20).default('2026-11'),
+
   // Correo saliente
   MAIL_HOST: z.string().default('localhost'),
   MAIL_PORT: z.coerce.number().int().default(1025),

@@ -1,0 +1,31 @@
+meta {
+  name: Buscar estudiantes
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/estudiantes?buscar=Restrepo&pagina=1&porPagina=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  buscar: Restrepo
+  pagina: 1
+  porPagina: 20
+}
+
+tests {
+  test("lista con su total y el acudiente titular", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.total).to.be.a("number");
+    expect(res.body.estudiantes).to.be.an("array");
+  });
+}
+
+docs {
+  HU01-E3: «busca al estudiante por nombre o documento». `buscar` compara
+  contra el documento y contra el nombre completo. Acepta también `grupoId`.
+  Sin `buscar` devuelve todos, paginados.
+}

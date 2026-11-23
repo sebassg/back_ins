@@ -1,0 +1,80 @@
+meta {
+  name: Registrar estudiante
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/estudiantes
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  // Documentos nuevos en cada ejecución: HU01-E2 rechaza los duplicados.
+  const nuevo = () => String(Math.floor(1e9 + Math.random() * 9e9));
+  const doc = nuevo();
+  bru.setVar("docEstudiante", doc);
+  bru.setVar("docAcudiente", nuevo());
+  bru.setVar("correoAcudiente", `acudiente-${doc}@prueba.edu.co`);
+}
+
+body:json {
+  {
+    "tipoDocumento": "RC",
+    "numeroDocumento": "{{docEstudiante}}",
+    "nombres": "Sofía Valentina",
+    "apellidos": "Restrepo Gómez",
+    "fechaNacimiento": "2021-04-15",
+    "grupoId": {{grupoId}},
+    "acudiente": {
+      "tipoDocumento": "CC",
+      "numeroDocumento": "{{docAcudiente}}",
+      "nombres": "Ana María",
+      "apellidos": "Gómez Díaz",
+      "correo": "{{correoAcudiente}}",
+      "telefono": "3001234567",
+      "parentesco": "MADRE"
+    },
+    "autorizacionTratamientoDatos": true
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("uuidEstudiante", res.body.ficha.uuid);
+    bru.setVar("uuidAcudiente", res.body.ficha.acudientes[0].uuid);
+  }
+  // Solo los correos enviados desde ahora cuentan para leer el enlace, igual
+  // que en "04 Activación / Reenviar activación".
+  bru.setVar("enlaceSolicitadoEn", Date.now());
+  bru.setVar("tokenEnlace", "");
+}
+
+tests {
+  test("registra la ficha y abre la cuenta del acudiente", function () {
+    expect(res.status).to.equal(201);
+    expect(res.body.cuentaAcudiente).to.equal("CREADA");
+    expect(res.body.ficha.acudientes[0].titular).to.equal(true);
+    expect(res.body.ficha.acudientes[0].estadoCuenta).to.equal("PENDIENTE_ACTIVACION");
+    expect(res.body.ficha.autorizacionDatos.revocadoEn).to.equal(null);
+  });
+}
+
+docs {
+  HU01-E1. Un solo guardado: la ficha del menor, el vínculo con su acudiente
+  titular, la cuenta de ese acudiente y la constancia de tratamiento de
+  datos (Ley 1581 de 2012). Todo en una transacción.
+
+  El acudiente queda en PENDIENTE_ACTIVACION y recibe el enlace para definir
+  su propia contraseña: nadie se la asigna. Léalo en
+  "04 Activación / Leer enlace de activación (Mailpit)" con
+  `correoAcudiente`, actívelo y ya puede iniciar sesión (HU07-E1).
+
+  Si el documento del acudiente ya existe con los mismos datos (otro hijo ya
+  registrado), responde `cuentaAcudiente: "REUTILIZADA"` y no envía correo.
+
+  HU01-E2: un duplicado responde 409 con el campo en conflicto —
+  `numeroDocumento`, `acudiente.numeroDocumento` o `acudiente.correo`—; los
+  campos faltantes, 400. `versionAviso` no se envía: la estampa el servidor.
+}

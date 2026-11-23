@@ -35,6 +35,49 @@ bitácoras (RNF-04).
 - Se revoca la **sesión**, no los tokens: un refresh que llegue después de
   revocar nace apuntando a una sesión revocada, así que tampoco sirve.
 
+## v2 — HU01 (gestionar estudiantes y acudientes titulares)
+
+Script: `db/migrations/002_hu01_estudiantes.sql`
+
+**Cuatro tablas**, separadas por responsabilidad:
+
+| Tabla | Para qué |
+|---|---|
+| `grupo` | El curso de preescolar, su jornada, su hora de salida y su docente titular |
+| `estudiante` | Quién es el menor. No tiene cuenta: un niño de preescolar no inicia sesión |
+| `acudiente_estudiante` | Quién responde por el menor, con qué parentesco y si es el titular |
+| `autorizacion_tratamiento_datos` | La constancia de la Ley 1581 de 2012, con su versión del aviso |
+
+**Otros objetos**: la columna generada `acudiente_estudiante.titular_unico`
+(`PERSISTENT`) y su índice único `uq_titular_por_estudiante`.
+
+**Decisiones de modelado que conviene no deshacer sin discutirlo**
+
+- **El vínculo es una tabla, no una columna `acudiente_id` en `estudiante`.** Un
+  menor puede tener más de un adulto responsable (HU03 autoriza terceros, HU05
+  restringe a uno en particular) y un acudiente puede tener varios hijos en la
+  institución. Una columna obligaría a duplicar la cuenta por cada hermano; con
+  la tabla, un segundo hijo reutiliza la cuenta que ya existe.
+- **Un solo titular por estudiante lo garantiza la base de datos**, no el código:
+  `titular_unico` vale `estudiante_id` cuando la fila es la titular y NULL
+  cuando no, y el índice único admite cualquier cantidad de NULL pero un solo
+  valor por estudiante.
+- **El consentimiento es una tabla con historial, no un booleano.** La ley exige
+  poder demostrar cuándo y quién autorizó, y la autorización es revocable: hay
+  que conservar lo que se aceptó, no sobrescribirlo. `version_aviso` la estampa
+  el servidor, no el formulario.
+- **`estudiante.actualizado_por` duplica a propósito lo que ya está en
+  `auditoria`.** HU01-E3 exige mostrar en la ficha la fecha y el usuario del
+  último cambio; resolverlo con un JOIN a la bitácora en cada consulta sería un
+  escaneo. La bitácora sigue siendo el rastro completo e inmutable.
+- **`acudiente_estudiante.estado` es del vínculo, no de la cuenta.** INACTIVO
+  significa que ese adulto ya no responde por ese menor; desactivar la cuenta de
+  la persona es `usuario.estado` (HU12-E3).
+- El código no vincula como acudiente el documento de un `DOCENTE` o
+  `ADMINISTRATIVO`: responde 409. Es el caso de «varios roles por persona» que
+  queda listado abajo; cuando la institución lo pida, ese rechazo es lo que hay
+  que levantar.
+
 ## Posibles cambios futuros (opciones, no deudas)
 
 - **Panel granular de permisos.** Si la institución necesita administrar permisos
@@ -48,7 +91,6 @@ bitácoras (RNF-04).
 
 ## Pendiente en las próximas HU
 
-- **HU01**: `estudiante`, `grupo`, `acudiente_estudiante`, `autorizacion_tratamiento_datos`.
 - **HU02/HU03**: `pase_qr`, `autorizacion_tercero`, `tercero`.
 - **HU04**: `entrega` (bitácora de entregas).
 - **HU05/HU06**: `restriccion_custodia`, `soporte_legal`, `incidente_seguridad`.

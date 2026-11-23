@@ -1,0 +1,16 @@
+meta {
+  name: 07 Estudiantes
+  seq: 7
+}
+
+docs {
+  HU01: el personal administrativo registra estudiantes y le crea la cuenta
+  al acudiente titular. Requieren sesión de un ADMINISTRATIVO: heredan
+  `Bearer {{accessToken}}` de la colección.
+
+  Orden sugerido: ejecute "02 Sesión / Iniciar sesión" con la cuenta de
+  secretaría, luego "Listar grupos" (guarda `grupoId`) y después "Registrar
+  estudiante" (guarda `uuidEstudiante`, `uuidAcudiente` y el correo). El
+  enlace de activación del acudiente se lee en
+  "04 Activación / Leer enlace de activación (Mailpit)".
+}

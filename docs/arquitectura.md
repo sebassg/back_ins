@@ -67,6 +67,23 @@ src/modules/auth/
 └── stores/                   adaptadores de @nestjs/authentication
 ```
 
+El módulo de HU01 sigue la misma forma, sin `entities/` ni `stores/`:
+
+```
+src/modules/estudiantes/
+├── estudiantes.module.ts
+├── estudiantes.controller.ts   HTTP: DTOs, 201, 409 con el campo en conflicto
+├── grupos.controller.ts        los grupos, para poder elegir el del estudiante
+├── estudiantes.service.ts      reglas: duplicidad, reutilizar al acudiente, activación
+├── estudiantes.repository.ts   la transacción de HU01-E1 y las consultas
+├── estudiante.types.ts         los ENUM del dominio y la forma de la ficha
+└── dto/                        esquemas zod de la petición
+```
+
+La cuenta del acudiente la escribe `UsuariosRepository.insertarAcudienteEn()`,
+que recibe el `EntityManager` de la transacción: así el SQL de `usuario` se queda
+en el módulo que es su dueño, y la transacción vive en un solo lugar.
+
 ### Las carpetas transversales
 
 ```

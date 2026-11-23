@@ -37,7 +37,10 @@ rompe nada ni duplica datos.
 - **Nunca se borra un usuario ni un registro de bitácora**: se cambia el estado.
 - Nombres de tablas y columnas en español, igual que el backlog.
 
-## Las siete tablas
+## Las once tablas
+
+Siete son de la autenticación (migración 001) y cuatro del registro de
+estudiantes (migración 002).
 
 | Tabla | Responsabilidad |
 |---|---|
@@ -48,6 +51,10 @@ rompe nada ni duplica datos.
 | `token_correo` | Enlaces de activación y de recuperación |
 | `intento_login` | Bitácora de intentos de ingreso (HU07-E2) |
 | `auditoria` | Bitácora institucional inmutable (RNF-04) |
+| `grupo` | El curso de preescolar: jornada, hora de salida y docente titular |
+| `estudiante` | Quién es el menor. No tiene cuenta ni credencial |
+| `acudiente_estudiante` | Quién responde por el menor, con qué parentesco, y quién es el titular |
+| `autorizacion_tratamiento_datos` | La constancia de la Ley 1581 de 2012 |
 
 La división entre `usuario` y `credencial` es deliberada: `usuario` responde
 *quién es*, `credencial` responde *cómo entra y qué le pasó al intentarlo*. Lo
@@ -186,7 +193,53 @@ REVOKE UPDATE, DELETE ON retiro_seguro.intento_login FROM 'retiro_app'@'%';
 En `detalle` (JSON) nunca se guardan contraseñas, tokens ni datos sensibles del
 menor (Ley 1581 de 2012, RNF-03).
 
-## 7. Trazabilidad con el backlog
+## 7. Cómo se registran los estudiantes y sus acudientes (HU01)
+
+El estudiante **no cuelga de `usuario`**: un niño de preescolar no inicia sesión,
+así que no tiene cuenta ni credencial. `usuario` es la tabla de quien entra al
+sistema; `estudiante`, la de quien es retirado.
+
+Entre los dos está `acudiente_estudiante`, y es una tabla y no una columna
+`acudiente_id` por dos razones del propio backlog: un menor puede tener más de un
+adulto responsable (HU03 autoriza terceros, HU05 restringe a uno en particular) y
+un acudiente puede tener varios hijos en la institución. Con una columna, el
+segundo hermano obligaría a duplicar la cuenta de la madre; con la tabla, se
+reutiliza la que ya existe —y es lo que hace el registro de HU01-E1—.
+
+**Un solo titular por estudiante lo garantiza la base de datos.** `titular` es un
+booleano, pero la unicidad no se puede expresar con un índice sobre él (dejaría
+pasar un solo `FALSE`). Por eso hay una columna generada:
+
+```sql
+titular_unico BIGINT UNSIGNED AS (IF(titular, estudiante_id, NULL)) PERSISTENT,
+UNIQUE KEY uq_titular_por_estudiante (titular_unico)
+```
+
+Vale `estudiante_id` cuando la fila es la titular y `NULL` cuando no. El índice
+único admite cualquier cantidad de `NULL` pero un solo valor por estudiante.
+
+**El consentimiento de tratamiento de datos es una tabla con historial, no un
+booleano en `estudiante`.** La Ley 1581 de 2012 exige poder demostrar *cuándo* y
+*quién* autorizó, y la autorización es revocable: hay que conservar lo que se
+aceptó, no sobrescribirlo. `version_aviso` registra contra qué versión del aviso
+de privacidad se autorizó, y la estampa el servidor desde
+`VERSION_AVISO_PRIVACIDAD`: una constancia legal no puede depender de lo que
+envíe el formulario.
+
+Dos estados que se parecen y no son lo mismo:
+
+| Columna | Qué significa | Quién lo cambia |
+|---|---|---|
+| `usuario.estado` | Si la persona puede entrar al sistema | HU12-E3, `PATCH usuarios/:uuid/desactivar` |
+| `acudiente_estudiante.estado` | Si ese adulto sigue respondiendo por ese menor | HU01-E3, `PATCH estudiantes/:uuid/acudientes/:uuid` |
+
+Y `estudiante.actualizado_por` duplica a propósito algo que ya está en
+`auditoria`: HU01-E3 exige mostrar en la ficha la fecha y el usuario del último
+cambio, y resolverlo con un JOIN a la bitácora en cada consulta sería un escaneo.
+La bitácora sigue siendo el rastro completo e inmutable; la columna es solo el
+último cambio.
+
+## 8. Trazabilidad con el backlog
 
 | Historia / requisito | Dónde se cumple |
 |---|---|
@@ -196,5 +249,8 @@ menor (Ley 1581 de 2012, RNF-03).
 | HU12-E1 menú según el rol | `usuario.rol` (el JWT lo lleva en sus claims) |
 | HU12-E2 acceso denegado a otro rol | políticas de `@nestjs/authorization` sobre `usuario.rol` |
 | HU12-E3 desactivar y cerrar sesiones | `usuario.estado='INACTIVO'` + `UPDATE sesion SET revocada_en` |
+| HU01-E1 registro de estudiante y acudiente titular | `estudiante`, `acudiente_estudiante.titular`, `autorizacion_tratamiento_datos`, `usuario.creado_por` |
+| HU01-E2 obligatorios y duplicidad | `uq_estudiante_documento`, `uq_usuario_documento`, `uq_usuario_correo`, `uq_titular_por_estudiante` |
+| HU01-E3 consulta y actualización | `ix_estudiante_apellidos`, `estudiante.actualizado_por` + `actualizado_en`, `acudiente_estudiante.estado` |
 | RNF-03 protección de datos | hash scrypt, collation binaria, `uuid` público en vez del documento, `detalle` sin datos sensibles |
 | RNF-04 auditoría no modificable | triggers de `auditoria` e `intento_login` |

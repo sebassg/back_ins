@@ -8,6 +8,13 @@ export function esRol(valor: unknown): valor is Rol {
   );
 }
 
+/**
+ * ENUM `usuario.tipo_documento`. `estudiante` reutiliza esta misma lista para
+ * no mantener dos catálogos del mismo dato (db/migrations/002).
+ */
+export const TIPOS_DOCUMENTO = ['CC', 'TI', 'RC', 'CE', 'PA', 'PEP'] as const;
+export type TipoDocumento = (typeof TIPOS_DOCUMENTO)[number];
+
 /** ENUM `usuario.estado`. El bloqueo por intentos NO es un estado: vive en `credencial`. */
 export type EstadoUsuario = 'PENDIENTE_ACTIVACION' | 'ACTIVO' | 'INACTIVO';
 

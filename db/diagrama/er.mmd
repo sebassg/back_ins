@@ -6,6 +6,12 @@ erDiagram
     usuario ||--o{ intento_login : "origina"
     usuario ||--o{ auditoria : "ejecuta"
     usuario ||--o{ usuario : "provisiona"
+    grupo      ||--o{ estudiante : "agrupa"
+    usuario    ||--o{ grupo : "dirige"
+    estudiante ||--o{ acudiente_estudiante : "tiene"
+    usuario    ||--o{ acudiente_estudiante : "responde por"
+    estudiante ||--o{ autorizacion_tratamiento_datos : "cuenta con"
+    usuario    ||--o{ autorizacion_tratamiento_datos : "otorga"
 
     usuario {
         bigint id PK
@@ -85,4 +91,51 @@ erDiagram
         json detalle
         varbinary ip
         datetime creado_en
+    }
+
+    grupo {
+        bigint id PK
+        varchar nombre UK "Transicion A, Jardin B"
+        enum jornada "MANANA, TARDE, UNICA"
+        time hora_salida "HU03 mide 2 horas contra ella; HU11 la cambia"
+        bigint docente_id FK "docente titular del grupo"
+        datetime creado_en
+        datetime actualizado_en
+    }
+
+    estudiante {
+        bigint id PK
+        char uuid UK "identificador publico; contenido del QR (HU02)"
+        enum tipo_documento "CC, TI, RC, CE, PA, PEP; por omision RC"
+        varchar numero_documento UK "HU01-E2 rechaza el duplicado"
+        varchar nombres
+        varchar apellidos
+        date fecha_nacimiento
+        bigint grupo_id FK
+        enum estado "ACTIVO, RETIRADO"
+        bigint creado_por FK "quien registro la ficha (HU01-E1)"
+        bigint actualizado_por FK "quien hizo el ultimo cambio (HU01-E3)"
+        datetime creado_en
+        datetime actualizado_en
+    }
+
+    acudiente_estudiante {
+        bigint estudiante_id PK, FK
+        bigint usuario_id PK, FK "la cuenta del acudiente"
+        enum parentesco "MADRE, PADRE, ABUELO, TIO, HERMANO, TUTOR_LEGAL, OTRO"
+        boolean titular "genera el pase (HU02) y autoriza terceros (HU03)"
+        bigint titular_unico UK "columna generada: un solo titular por estudiante"
+        enum estado "ACTIVO, INACTIVO; del vinculo, no de la cuenta"
+        datetime creado_en
+        datetime actualizado_en
+    }
+
+    autorizacion_tratamiento_datos {
+        bigint id PK
+        bigint estudiante_id FK
+        bigint otorgado_por FK "el acudiente que autoriza"
+        bigint registrado_por FK "el funcionario que dejo constancia"
+        varchar version_aviso "version del aviso de privacidad aceptada"
+        datetime otorgado_en
+        datetime revocado_en "es revocable; la fila no se borra"
     }

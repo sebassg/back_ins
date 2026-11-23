@@ -27,3 +27,14 @@ export function json<T>(valor: unknown): T | undefined {
   }
   return (typeof valor === 'string' ? JSON.parse(valor) : valor) as T;
 }
+
+/**
+ * `id` que acaba de asignar un INSERT con AUTO_INCREMENT. Se devuelve como
+ * texto porque las llaves son BIGINT: fuera del rango seguro de un number.
+ */
+export function idInsertado(resultado: unknown): string {
+  if (resultado && typeof resultado === 'object' && 'insertId' in resultado) {
+    return String((resultado as { insertId: unknown }).insertId);
+  }
+  throw new Error('La consulta no devolvió el id insertado');
+}

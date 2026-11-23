@@ -1,0 +1,34 @@
+meta {
+  name: Listar grupos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/grupos
+  body: none
+  auth: inherit
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.length > 0) {
+    bru.setVar("grupoId", res.body[0].id);
+  }
+}
+
+tests {
+  test("devuelve los grupos con su hora de salida", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("array");
+    expect(res.body[0].horaSalida).to.match(/^\d{2}:\d{2}$/);
+  });
+}
+
+docs {
+  Los grupos de preescolar, para elegir el del estudiante al registrarlo.
+  Guarda el primero en `grupoId`. La semilla crea Transición A y B.
+
+  También la ve el DOCENTE: necesita su grupo en la portería (HU04). Su
+  gestión —crear grupos, asignar docente titular, cambiar la hora de
+  salida— es de HU11.
+}

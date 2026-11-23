@@ -1,0 +1,42 @@
+meta {
+  name: Actualizar acudiente
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/estudiantes/{{uuidEstudiante}}/acudientes/{{uuidAcudiente}}
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  if (!bru.getVar("uuidEstudiante") || !bru.getVar("uuidAcudiente")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  {
+    "telefono": "3109876543"
+  }
+}
+
+tests {
+  test("guarda el contacto del acudiente", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.acudientes[0].telefono).to.equal("3109876543");
+  });
+}
+
+docs {
+  HU01-E3: datos de contacto del acudiente (`correo`, `telefono`), su
+  `parentesco` y el `estado` del vínculo con ESTE estudiante.
+
+  `estado: "INACTIVO"` significa que ese adulto ya no responde por ese menor.
+  Desactivar su CUENTA es otra cosa y es de HU12:
+  "03 Usuarios / Desactivar usuario".
+
+  Cambiar el correo de una cuenta que sigue PENDIENTE_ACTIVACION invalida el
+  enlace anterior, así que el sistema envía uno nuevo a la dirección nueva.
+}

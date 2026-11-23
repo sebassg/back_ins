@@ -1,0 +1,40 @@
+meta {
+  name: Actualizar estudiante
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/estudiantes/{{uuidEstudiante}}
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  if (!bru.getVar("uuidEstudiante")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  {
+    "grupoId": {{grupoId}}
+  }
+}
+
+tests {
+  test("devuelve la ficha con el cambio y quién lo hizo", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.actualizadoPor).to.be.a("string");
+  });
+}
+
+docs {
+  HU01-E3: cambia la ficha del estudiante (`nombres`, `apellidos`,
+  `fechaNacimiento`, `grupoId`, `estado`). Solo toca lo que se envía, y debe
+  llevar al menos un campo.
+
+  Queda registrado quién y cuándo, en la ficha y en `auditoria` (RNF-04).
+  Un estudiante que se va de la institución se marca `RETIRADO`: la ficha no
+  se borra, porque la bitácora de entregas la referencia.
+}

@@ -6,6 +6,7 @@ import { validarEnv } from './config/env.validation.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { EstudiantesModule } from './modules/estudiantes/estudiantes.module.js';
 import { UsuariosModule } from './modules/usuarios/usuarios.module.js';
 import { SaludModule } from './salud/salud.module.js';
 
@@ -27,6 +28,7 @@ import { SaludModule } from './salud/salud.module.js';
     AuditoriaModule,
     UsuariosModule,
     AuthModule,
+    EstudiantesModule,
   ],
   providers: [
     // useExisting: así las pruebas pueden sustituirlo con overrideProvider().
