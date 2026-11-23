@@ -1,0 +1,113 @@
+# =============================================================================
+#  Integración continua del API de Retiro Seguro.
+#
+#  En cada push y en cada pull request: lint, pruebas unitarias y pruebas e2e
+#  contra una MariaDB real con el esquema de db/migrations aplicado.
+#  Si todo pasa y el push fue a main, se le pide a Dokploy que despliegue.
+# =============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  calidad:
+    name: Lint y compilación
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Lint
+        run: npm run lint
+      - name: Compilar
+        run: npm run build
+
+  pruebas:
+    name: Pruebas unitarias y e2e
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: retiro_seguro
+          MARIADB_USER: retiro_app
+          MARIADB_PASSWORD: retiro_app
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      # Valores de prueba: ninguno es un secreto real.
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_NAME: retiro_seguro
+      DB_USER: retiro_app
+      DB_PASSWORD: retiro_app
+      DB_ROOT_USER: root
+      DB_ROOT_PASSWORD: root
+      JWT_SECRET: clave-de-pruebas-solo-para-ci-con-mas-de-32-caracteres
+      JWT_ISSUER: https://api.retiroseguro.local
+      JWT_AUDIENCE: app-retiro-seguro
+      URL_APP: http://localhost:5173
+      URL_RESTABLECER_CONTRASENA: http://localhost:5173/restablecer-contrasena
+      MAIL_HOST: localhost
+      MAIL_PORT: '1025'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+
+      - name: Instalar el cliente de MariaDB
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mariadb-client
+
+      - name: Aplicar el esquema y las semillas
+        run: bash db/install.sh
+
+      - name: Pruebas unitarias
+        run: npm test
+
+      - name: Pruebas e2e
+        run: npm run test:e2e
+
+  despliegue:
+    name: Desplegar en el servidor
+    needs: [calidad, pruebas]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    environment: produccion
+    steps:
+      - name: Avisar a Dokploy
+        env:
+          WEBHOOK: ${{ secrets.DOKPLOY_WEBHOOK_API }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::error::Falta el secreto DOKPLOY_WEBHOOK_API."
+            exit 1
+          fi
+          codigo=$(curl -sS -X POST -o respuesta.txt -w '%{http_code}' "$WEBHOOK")
+          echo "Dokploy respondió $codigo"
+          cat respuesta.txt
+          [ "$codigo" -lt 400 ] || exit 1

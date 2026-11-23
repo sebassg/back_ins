@@ -1,0 +1,17 @@
+# Lo que no debe entrar al contexto de construcción de la imagen.
+node_modules
+dist
+*.tsbuildinfo
+.git
+.github
+.env
+.env.*
+!.env.example
+bruno
+docs
+test
+coverage
+docker-compose.yml
+README.md
+AGENTS.md
+CLAUDE.md
